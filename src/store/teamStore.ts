@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { BattleGeneral, GeneralDef } from '../types';
 import type { SkillDef } from '../types/skill';
-import { allGenerals, getSkillById, generalSkills } from '../data';
+import { allGenerals, generalSkills } from '../data';
 import { computeBaseAttributes, refreshEffectiveAttributes } from '../engine';
 import { BASE_FREE_POINTS, ADVANCEMENT_POINTS } from '../types/general';
 import { useGameStore } from './gameStore';

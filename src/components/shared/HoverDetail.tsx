@@ -29,8 +29,8 @@ const BUTTON_DESCRIPTIONS: Record<string, string> = {
 export default function HoverDetail({ type, id, label, children }: Props) {
   const [show, setShow] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
-  const showTimer = useRef<ReturnType<typeof setTimeout>>();
-  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const showTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleEnter = useCallback((e: React.MouseEvent) => {
     clearTimeout(hideTimer.current);

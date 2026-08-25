@@ -1,8 +1,7 @@
 import type { BattleGeneral, BattleState } from '../types';
-import { eventBus } from './eventBus';
 
 // 回合开始时检查状态
-export function checkRoundStartStatus(g: BattleGeneral, state: BattleState): void {
+export function checkRoundStartStatus(g: BattleGeneral, _state: BattleState): void {
   // 清醒: 清除所有控制状态
   if (g.hasClarity) {
     if (g.isStunned || g.isSilenced || g.isDisarmed) {
@@ -17,7 +16,7 @@ export function checkRoundStartStatus(g: BattleGeneral, state: BattleState): voi
 }
 
 // 回合结束时清理持续1回合的控制状态
-export function checkRoundEndStatus(g: BattleGeneral, state: BattleState): void {
+export function checkRoundEndStatus(_g: BattleGeneral, _state: BattleState): void {
   // 清除仅持续到自身回合结束的状态
   // (震慑在跳过回合后清除，在battleEngine中处理)
 }

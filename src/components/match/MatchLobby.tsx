@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { useMatchStore } from '../../store/matchStore';
 import DraftPhase from './DraftPhase';
 import BanPhase from './BanPhase';
@@ -8,7 +7,6 @@ import ConfigPhase from './ConfigPhase';
 import BattlePhase from './BattlePhase';
 
 export default function MatchLobby() {
-  const { player } = useAuth();
   const navigate = useNavigate();
   const {
     status, connect, disconnect, joinQueue, leaveQueue, phase, reward, replays, reset,
@@ -45,7 +43,7 @@ export default function MatchLobby() {
             <div className="mb-6">
               <h3 className="text-[#c9a84c] text-base mb-2">战报回放</h3>
               <div className="flex gap-2 justify-center flex-wrap">
-                {replays.map((r, i) => (
+                {replays.map((_, i) => (
                   <button key={i}
                     onClick={() => {/* TODO: replay viewer */}}
                     className="px-3 py-1 bg-[#3d2b1a] text-[#c9a84c] rounded text-sm hover:bg-[#3a2f1e] cursor-pointer"

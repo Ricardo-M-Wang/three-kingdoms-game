@@ -1,4 +1,4 @@
-import type { BattleGeneral, BattleState, BuffInstance, StatusInstance } from '../types';
+import type { BattleGeneral, BattleState } from '../types';
 import { eventBus } from './eventBus';
 import { refreshEffectiveAttributes } from './attributeCalculator';
 
@@ -144,7 +144,7 @@ export function applyFunctionalBuff(
   applyBuff(target, buffId, getBuffName(buffId), duration, 1, state, sourceId);
 }
 
-function applyBuffEffect(target: BattleGeneral, buffId: string, stacks: number, state: BattleState): void {
+function applyBuffEffect(target: BattleGeneral, buffId: string, _stacks: number, _state: BattleState): void {
   // 这里只处理属性类buff，功能性buff在applyFunctionalBuff中处理
   switch (buffId) {
     case 'bubu_dmg_reduction': {
@@ -249,7 +249,7 @@ function removeStatusEffect(g: BattleGeneral, statusId: string): void {
 
 // 回合开始时重置每回合的debuff追踪计数器
 // 注意: 不重置属性修正值(defBonusPercent等)，这些由各武将自身的回合结束逻辑处理
-export function resetRoundDebuffs(generals: BattleGeneral[]): void {
+export function resetRoundDebuffs(_generals: BattleGeneral[]): void {
   // 每回合追踪计数器由 battleEngine processRoundStart 处理
   // 此函数保留作为扩展点
 }

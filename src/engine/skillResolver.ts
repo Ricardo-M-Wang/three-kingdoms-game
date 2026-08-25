@@ -1,11 +1,11 @@
-import type { BattleGeneral, BattleState, BattleLogEntry, Team } from '../types';
+import type { BattleGeneral, BattleState, Team } from '../types';
 import type { SkillDef, SkillEffect } from '../types/skill';
 import type { DamageContext } from '../types/damage';
 import { calculateDamage, applyDamage, clampHealing } from './damageCalculator';
 import { applyBuff, applyDebuff, applyStatus, applyFunctionalBuff, getRandomFunctionalBuff, getOwnedFunctionalBuffs } from './buffManager';
 import { refreshEffectiveAttributes } from './attributeCalculator';
 import { eventBus } from './eventBus';
-import { rollChance, randomPick, randomInt } from '../utils/random';
+import { rollChance, randomPick } from '../utils/random';
 import { getSkillById } from '../data';
 
 // 应用功能性增益并触发 on_ally_gain_buff 技能（如张郃巧变）
@@ -237,8 +237,8 @@ function applyDotEffect(target: BattleGeneral, source: BattleGeneral, multiplier
   applyBuff(target, 'burn', '灼烧', duration, 1, state, source.generalId);
   // 存储灼烧伤害值及施加者
   target.customState['burn_damage'] = dotDmg;
-  target.customState['burn_source_id'] = source.generalId as any;
-  target.customState['burn_source_name'] = source.name as any;
+  target.burnSourceId = source.generalId;
+  target.burnSourceName = source.name;
 }
 
 // 解析目标
@@ -311,7 +311,7 @@ function resolveTargets(targetType: string, source: BattleGeneral, state: Battle
 }
 
 // 记录伤害 (从state读取技能上下文)
-function recordDamage(source: BattleGeneral, target: BattleGeneral, damage: number, state: BattleState): void {
+function recordDamage(source: BattleGeneral, _target: BattleGeneral, damage: number, state: BattleState): void {
   const sideStats = source.side === 'player' ? state.playerTotalDamage : state.enemyTotalDamage;
   sideStats[source.generalId] = (sideStats[source.generalId] ?? 0) + damage;
 
@@ -539,7 +539,7 @@ function handleHubaoxiongqi(source: BattleGeneral, state: BattleState): void {
   });
 }
 
-function handleBeifazhizhi(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleBeifazhizhi(source: BattleGeneral, state: BattleState, _extraArgs?: Record<string, any>): void {
   // 北伐之志: 我方全体造成非普攻伤害后，姜维对随机敌方目标造成100%武力+100%智力伤害
   const enemies = getEnemyAlive(state, source.side);
   if (enemies.length === 0) return;
@@ -709,7 +709,7 @@ function handleTaoyuanjieyi(source: BattleGeneral, state: BattleState): void {
     for (const ally of allies) {
       if (!ally.isAlive) continue;
       const rawHeal = Math.round(source.effectiveAttributes.int * 1.0);
-      const { effectiveHeal, wasted } = clampHealing(ally, rawHeal);
+      const { effectiveHeal } = clampHealing(ally, rawHeal);
       ally.currentHp = Math.min(ally.maxHp, ally.currentHp + effectiveHeal);
       eventBus.emit('heal:applied', ally, effectiveHeal, source.name, state);
       recordHeal(source, effectiveHeal, state);
@@ -719,7 +719,7 @@ function handleTaoyuanjieyi(source: BattleGeneral, state: BattleState): void {
     );
     if (lowest) {
       const rawExtraHeal = Math.round(source.effectiveAttributes.int * 0.5);
-      const { effectiveHeal: effExtra, wasted: wastedExtra } = clampHealing(lowest, rawExtraHeal);
+      const { effectiveHeal: effExtra } = clampHealing(lowest, rawExtraHeal);
       lowest.currentHp = Math.min(lowest.maxHp, lowest.currentHp + effExtra);
       recordHeal(source, effExtra, state);
     }
@@ -774,12 +774,6 @@ function handleGuruojintang(source: BattleGeneral, state: BattleState): void {
     // 第四回合开始：我方buff
     const allies = getAllyAlive(state, source.side);
     for (const ally of allies) {
-      const maxAttr = Math.max(
-        ally.effectiveAttributes.atk,
-        ally.effectiveAttributes.int,
-        ally.effectiveAttributes.def,
-        ally.effectiveAttributes.spd,
-      );
       ally.atkBonusPercent += 10;
       ally.intBonusPercent += 10;
       ally.defBonusPercent += 10;
@@ -840,7 +834,7 @@ function handleQuanyujiangdong(source: BattleGeneral, state: BattleState, extraA
     const allies = getAllyAlive(state, source.side);
     for (const ally of allies) {
       const rawHeal = Math.round(source.effectiveAttributes.int * 1.2);
-      const { effectiveHeal, wasted } = clampHealing(ally, rawHeal);
+      const { effectiveHeal } = clampHealing(ally, rawHeal);
       ally.currentHp = Math.min(ally.maxHp, ally.currentHp + effectiveHeal);
       eventBus.emit('heal:applied', ally, effectiveHeal, source.name, state);
       recordHeal(source, effectiveHeal, state);
@@ -862,7 +856,7 @@ function handleQuanyujiangdong(source: BattleGeneral, state: BattleState, extraA
   }
 }
 
-function handleHuoshaochibi(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleHuoshaochibi(source: BattleGeneral, state: BattleState, _extraArgs?: Record<string, any>): void {
   // 火烧赤壁: 每次触发后概率递减10%，从60%开始
   const triggeredCount = source.customState['chibi_triggered'] ?? 0;
   const currentRate = Math.max(10, 60 - triggeredCount * 10);
@@ -899,7 +893,7 @@ function handleHuoshaochibi(source: BattleGeneral, state: BattleState, extraArgs
 
 // ========== 被动战法实现 ==========
 
-function handleShenweitainjiangjun(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleShenweitainjiangjun(source: BattleGeneral, _state: BattleState, extraArgs?: Record<string, any>): void {
   // 神威天将军: 普攻后速度+5%
   if (extraArgs?.triggerType === 'after_attack') {
     source.spdBonusPercent += 5;
@@ -1368,8 +1362,8 @@ function handleHuoshaolianying(source: BattleGeneral, state: BattleState): void 
     const burnStacks = enemy.buffs.filter(b => b.id === 'burn').reduce((sum, b) => sum + b.stacks, 0);
     if (burnStacks > 0) {
       const burnDmgPerStack = (enemy.customState['burn_damage']) ?? 0;
-      const burnSourceId = (enemy.customState['burn_source_id'] as string) ?? '';
-      const burnSourceName = (enemy.customState['burn_source_name'] as string) ?? '未知';
+      const burnSourceId = enemy.burnSourceId ?? '';
+      const burnSourceName = enemy.burnSourceName ?? '未知';
       const totalDmg = Math.round(burnDmgPerStack * burnStacks);
       if (totalDmg > 0) {
         // 伤害归属灼烧施加者
@@ -1455,7 +1449,7 @@ function handleShishengshibai(source: BattleGeneral, state: BattleState): void {
 
 // ========== 追击战法实现 ==========
 
-function handleZiqilvli(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleZiqilvli(source: BattleGeneral, state: BattleState, _extraArgs?: Record<string, any>): void {
   // 姿器膂力: 普攻后随机获得功能性增益，对目标造成380%武力伤害
   const owned = getOwnedFunctionalBuffs(source);
   const newBuff = getRandomFunctionalBuff(owned);
@@ -1477,7 +1471,7 @@ function handleZiqilvli(source: BattleGeneral, state: BattleState, extraArgs?: R
   recordDamage(source, target, result.finalDamage, state);
 }
 
-function handleBaibuchuanyang(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleBaibuchuanyang(source: BattleGeneral, state: BattleState, _extraArgs?: Record<string, any>): void {
   // 百步穿杨: 提升20%暴击率(可叠加，上限100%)，对目标造成360%武力伤害
   const baibuStacks = Math.min((source.customState['baibu_crit_stacks'] ?? 0) + 1, 5);
   source.customState['baibu_crit_stacks'] = baibuStacks;
@@ -1498,7 +1492,7 @@ function handleBaibuchuanyang(source: BattleGeneral, state: BattleState, extraAr
   recordDamage(source, target, result.finalDamage, state);
 }
 
-function handleZhengqing(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleZhengqing(source: BattleGeneral, state: BattleState, _extraArgs?: Record<string, any>): void {
   // 争擎: 目标和自身防御各降20，造成240%武力伤害
   const enemies = getEnemyAlive(state, source.side);
   if (enemies.length === 0) return;
@@ -1521,7 +1515,7 @@ function handleZhengqing(source: BattleGeneral, state: BattleState, extraArgs?: 
   recordDamage(source, target, result.finalDamage, state);
 }
 
-function handleJieying(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleJieying(source: BattleGeneral, state: BattleState, _extraArgs?: Record<string, any>): void {
   // 劫营: 造成400%武力伤害+断粮(降低回复70%)
   const enemies = getEnemyAlive(state, source.side);
   if (enemies.length === 0) return;
@@ -1542,12 +1536,12 @@ function handleJieying(source: BattleGeneral, state: BattleState, extraArgs?: Re
 
 // ========== 通用被动战法实现 ==========
 
-function handleHuixin(source: BattleGeneral, state: BattleState): void {
+function handleHuixin(source: BattleGeneral, _state: BattleState): void {
   source.critRate += 20;
   source.customState['huixin_round_bonus'] = 0;
 }
 
-function handleFange(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleFange(source: BattleGeneral, _state: BattleState, _extraArgs?: Record<string, any>): void {
   source.counterDamageBonus += 40;
 }
 
@@ -1557,16 +1551,16 @@ function handleLianpo(source: BattleGeneral, state: BattleState): void {
   }
 }
 
-function handleRuibukedang(source: BattleGeneral, state: BattleState): void {
+function handleRuibukedang(source: BattleGeneral, _state: BattleState): void {
   source.damageBonus += 40;
 }
 
-function handleTaoguangyanghui(source: BattleGeneral, state: BattleState): void {
+function handleTaoguangyanghui(source: BattleGeneral, _state: BattleState): void {
   source.activeSkillRateBonus += 15;
   source.damageBonus += 20; // 主动战法增伤
 }
 
-function handleBingguishensu(source: BattleGeneral, state: BattleState): void {
+function handleBingguishensu(source: BattleGeneral, _state: BattleState): void {
   source.spdBonusPercent += (20 / source.baseAttributes.spd) * 100;
   refreshEffectiveAttributes(source);
 }
@@ -1587,8 +1581,8 @@ export function processDotEffects(general: BattleGeneral, state: BattleState): v
   const burnBuffs = general.buffs.filter(b => b.id === 'burn');
   if (burnBuffs.length > 0) {
     const burnDmgPerStack = (general.customState['burn_damage']) ?? Math.round(general.effectiveAttributes.atk * 0.6);
-    const sourceId = (general.customState['burn_source_id'] as string) ?? '';
-    const sourceName = (general.customState['burn_source_name'] as string) ?? '未知';
+    const sourceId = general.burnSourceId ?? '';
+    const sourceName = general.burnSourceName ?? '未知';
     const totalDmg = burnDmgPerStack * burnBuffs.length;
 
     general.currentHp = Math.max(0, general.currentHp - totalDmg);
@@ -1726,7 +1720,7 @@ function handleQuanjunchuji(source: BattleGeneral, state: BattleState): void {
   }
 }
 
-function handleYuanmenSheji(source: BattleGeneral, state: BattleState, extraArgs?: Record<string, any>): void {
+function handleYuanmenSheji(source: BattleGeneral, state: BattleState, _extraArgs?: Record<string, any>): void {
   const enemies = getEnemyAlive(state, source.side);
   if (enemies.length === 0) return;
   const target = enemies[Math.floor(Math.random() * enemies.length)];
@@ -1753,7 +1747,7 @@ function handleYuanmenSheji(source: BattleGeneral, state: BattleState, extraArgs
   recordDamage(source, target, result.finalDamage, state);
 }
 
-function handleWenwuShuangquan(source: BattleGeneral, state: BattleState): void {
+function handleWenwuShuangquan(source: BattleGeneral, _state: BattleState): void {
   // 文武双全: battle_start 设置标记，实际效果在 recordDamage 中触发
   source.customState['wenwu_enabled'] = 1;
   source.customState['wenwu_atk_stacks'] = 0;

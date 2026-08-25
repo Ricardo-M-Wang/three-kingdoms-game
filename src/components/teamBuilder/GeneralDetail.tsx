@@ -4,7 +4,6 @@ import { getSkillById } from '../../data';
 import GeneralPortrait from '../shared/GeneralPortrait';
 import AttributeAllocator from './AttributeAllocator';
 import SkillSelector from './SkillSelector';
-import SkillIcon from '../shared/SkillIcon';
 
 interface Props {
   general: BattleGeneral;

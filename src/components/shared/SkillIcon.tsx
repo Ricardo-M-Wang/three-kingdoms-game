@@ -32,12 +32,12 @@ const SKILL_STYLES = {
 
 interface Props {
   type: 'active' | 'pursuit' | 'command' | 'passive';
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export default function SkillIcon({ type, size = 'md' }: Props) {
   const style = SKILL_STYLES[type];
-  const dims = size === 'sm' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm';
+  const dims = size === 'sm' ? 'w-6 h-6 text-xs' : size === 'lg' ? 'w-10 h-10 text-base' : 'w-8 h-8 text-sm';
 
   return (
     <div

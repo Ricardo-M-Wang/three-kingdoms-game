@@ -6,7 +6,6 @@ import { refreshEffectiveAttributes } from '../../engine';
 import GeneralPool from './GeneralPool';
 import GeneralDetail from './GeneralDetail';
 import GeneralPortrait from '../shared/GeneralPortrait';
-import type { TeamPreset } from '../../store/teamStore';
 
 export default function TeamBuilderScreen() {
   const navigate = useNavigate();

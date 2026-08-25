@@ -138,7 +138,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
           generalId: target.generalId,
           animation: 'healing',
           floatingText: `+${Math.round(amount)}`,
-        }].slice(-10),
+        } as AnimationState].slice(-10),
       });
     });
 
@@ -148,17 +148,17 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
           generalId: dodger.generalId,
           animation: 'dodge',
           floatingText: '闪避!',
-        }].slice(-10),
+        } as AnimationState].slice(-10),
       });
     });
 
-    eventBus.on('general:died', (general: any, state: BattleState) => {
+    eventBus.on('general:died', (general: any, _state: BattleState) => {
       set({
         animations: [...get().animations, {
           generalId: general.generalId,
           animation: 'killed',
           floatingText: '',
-        }].slice(-10),
+        } as AnimationState].slice(-10),
       });
     });
 
@@ -176,7 +176,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
           generalId: general.generalId,
           animation: 'casting',
           floatingText: '',
-        }].slice(-10),
+        } as AnimationState].slice(-10),
         currentSkillEffect: effect,
         screenShake: isBigSkill,
       });
@@ -191,7 +191,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     });
 
     // 监听战斗结束
-    eventBus.on('battle:end', (winner: string, finalState: BattleState) => {
+    eventBus.on('battle:end', (_winner: string, finalState: BattleState) => {
       const playerDmg = Object.entries(finalState.playerTotalDamage);
       const enemyDmg = Object.entries(finalState.enemyTotalDamage);
 

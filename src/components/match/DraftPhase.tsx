@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useMatchStore } from '../../store/matchStore';
 import GeneralPortrait from '../shared/GeneralPortrait';
 import { getSkillById, getGeneralById } from '../../data';
-import type { GeneralDef } from '../../types';
 import RadarChart from '../shared/RadarChart';
 
 export default function DraftPhase() {
@@ -36,10 +35,6 @@ export default function DraftPhase() {
       setDetailItem(null);
     }
   };
-
-  const allPickedGenerals = isGenerals
-    ? [...myGenerals, ...selected.map(id => pool.find((g: any) => g.id === id)).filter(Boolean)]
-    : [];
 
   const getSkillName = (id: string) => getSkillById(id)?.name || id;
 

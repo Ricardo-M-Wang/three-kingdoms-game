@@ -1,47 +1,15 @@
-import type { BattleState, BattleGeneral, Team, BattleLogEntry } from '../types';
+import type { BattleState, BattleGeneral, Team } from '../types';
 import type { SkillDef } from '../types/skill';
 import { computeTurnOrder } from './turnOrder';
-import { performNormalAttack, resolveSkill, processDotEffects, processWeakness, processGuixin, tickMingQiXuShi } from './skillResolver';
+import { performNormalAttack, resolveSkill, processDotEffects, processWeakness, tickMingQiXuShi } from './skillResolver';
 import { tickAllBuffs, resetRoundDebuffs } from './buffManager';
 import { refreshEffectiveAttributes } from './attributeCalculator';
 import { eventBus } from './eventBus';
 import { rollChance } from '../utils/random';
 import { getSkillById } from '../data';
-import { canAct, canUseActiveSkill, canNormalAttack } from './statusResolver';
+import { canUseActiveSkill, canNormalAttack } from './statusResolver';
 import { MAX_ROUNDS } from '../data';
 import { GENERAL_FACTION } from '../hooks/useGeneralPortrait';
-
-// 创建战斗武将实例
-function createBattleGeneral(
-  generalId: string,
-  name: string,
-  portrait: string,
-  side: 'player' | 'enemy',
-  baseAtk: number, baseInt: number, baseDef: number, baseSpd: number,
-  freeAtk: number, freeInt: number, freeDef: number, freeSpd: number,
-  innateSkillId: string, equippedSkillIds: [string, string],
-): BattleGeneral {
-  return {
-    generalId, name, portrait, side,
-    baseAttributes: { atk: baseAtk, int: baseInt, def: baseDef, spd: baseSpd, hp: 10000 },
-    freePoints: { atk: freeAtk, int: freeInt, def: freeDef, spd: freeSpd },
-    innateSkillId, equippedSkillIds,
-    currentHp: 10000, maxHp: 10000, isAlive: true,
-    isStunned: false, isSilenced: false, isDisarmed: false,
-    hasArmorBreak: false, hasFormationBreak: false, hasInsight: false,
-    hasDoubleStrike: false, hasClarity: false, hasPenetrate: false,
-    buffs: [], statuses: [],
-    floodStacks: 0, fearStacks: 0,
-    atkBonusPercent: 0, intBonusPercent: 0, defBonusPercent: 0, spdBonusPercent: 0,
-    damageBonus: 0, damageReduction: 0, takenBonus: 0, takenReduction: 0,
-    critRate: 0, critDamage: 150,
-    lifestealPhysical: 0, lifestealMagical: 0,
-    dodgeRate: 0, counterDamageBonus: 0,
-    activeSkillRateBonus: 0,
-    effectiveAttributes: { atk: 0, int: 0, def: 0, spd: 0, hp: 10000 },
-    customState: {},
-  };
-}
 
 // 记录回合快照
 function snapshotRound(state: BattleState): void {
@@ -414,7 +382,7 @@ function processTurn(state: BattleState): BattleState {
     let hasActivatedThisTurn = false;
 
     // 如果正在准备某个战法，只处理它
-    const preparingSkillId = general.customState['preparing_skill'];
+    const preparingSkillId = general.preparingSkillId;
 
     for (const skill of activeSkills) {
       // 有准备中的战法时：仅跳过其他准备型战法，非准备型正常判定
@@ -427,7 +395,7 @@ function processTurn(state: BattleState): BattleState {
       if (skill.needsPreparation) {
         if (preparingSkillId === skill.id) {
           // 已准备完毕（通过法正跳过或正常等待），本回合释放
-          general.customState['preparing_skill'] = undefined;
+          general.preparingSkillId = undefined;
           eventBus.addLog({
             roundNumber: state.roundNumber,
             type: 'skill',
@@ -450,7 +418,7 @@ function processTurn(state: BattleState): BattleState {
             continue;
           }
           // 开始准备
-          general.customState['preparing_skill'] = skill.id;
+          general.preparingSkillId = skill.id;
           eventBus.addLog({
             roundNumber: state.roundNumber,
             type: 'skill',
@@ -460,8 +428,8 @@ function processTurn(state: BattleState): BattleState {
           triggerFazhengSkill(general, state);
           // 法正生效: 跳过准备，立即释放
           if (general.customState['skip_preparation']) {
-            general.customState['skip_preparation'] = undefined;
-            general.customState['preparing_skill'] = undefined;
+            general.customState['skip_preparation'] = 0;
+            general.preparingSkillId = undefined;
             eventBus.addLog({
               roundNumber: state.roundNumber,
               type: 'skill',

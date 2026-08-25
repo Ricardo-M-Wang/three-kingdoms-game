@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBattleStore, useGameStore } from '../../store';
 import type { SkillStats } from '../../types';
-import { getSkillById } from '../../data';
 import RoundChart from './RoundChart';
 
 export default function BattleResultScreen() {

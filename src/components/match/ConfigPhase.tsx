@@ -118,7 +118,7 @@ export default function ConfigPhase() {
       return;
     }
     setReady(true);
-    submitReady(teamSlots.filter(Boolean).map(g => ({
+    submitReady(teamSlots.filter((s): s is BattleGeneral => s !== null).map(g => ({
       ...g,
       innateSkillId: getGeneralById(g.generalId)?.innateSkillId || '',
     })));

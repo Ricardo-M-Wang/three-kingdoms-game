@@ -136,6 +136,10 @@ export interface BattleGeneral {
 
   // 其他武将特定状态追踪
   customState: Record<string, number>;
+  // 原存于 customState 的字符串字段（customState 为数值字典）
+  burnSourceId?: string;
+  burnSourceName?: string;
+  preparingSkillId?: string;
 }
 
 // 队伍

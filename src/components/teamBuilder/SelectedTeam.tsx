@@ -1,5 +1,4 @@
 import type { BattleGeneral } from '../../types';
-import GeneralPortrait from '../shared/GeneralPortrait';
 
 interface Props {
   generals: BattleGeneral[];
