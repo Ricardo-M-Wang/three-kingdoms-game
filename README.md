@@ -1,73 +1,160 @@
-# React + TypeScript + Vite
+# 三国志 · 回合制策略对战
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一款基于 **React + TypeScript** 的三国题材回合制策略对战游戏。双方各派最多 3 名武将上阵，在 8 回合内通过属性配点、战法搭配与速度博弈决出胜负。
 
-Currently, two official plugins are available:
+> 玩法核心：**运筹帷幄**——用阵容搭配、属性克制与战法连锁，以弱胜强。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 游戏特色
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| 系统 | 说明 |
+|------|------|
+| **武将系统** | 37 名三国武将，分魏 / 蜀 / 吴 / 群四阵营，每名武将五项属性按 S / A / B / C / D 等级成长 |
+| **战法系统** | 66 个战法，分主动 / 追击 / 指挥 / 被动四类，每名武将 1 个自带战法 + 最多 2 个通用战法 |
+| **组队配将** | 战前自由编队（最多 3 人）、分配 50 点自由属性点、搭配战法 |
+| **抽卡系统** | 获取武将的成长循环 |
+| **图鉴系统** | 全武将属性、阵营与战法查阅 |
+| **对战模式** | 支持匹配大厅的 Ban / Draft 选将流程与实时对战 |
+| **多端适配** | 响应式布局，支持桌面 + 移动端触屏 |
 
-## Expanding the ESLint configuration
+### 武将属性
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+每名武将有五项属性，生命固定为 10000：
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| 属性 | 作用 | 等级数值（S / A / B / C / D） |
+|------|------|------------------------------|
+| 武力 | 物理伤害 | 200 / 180 / 160 / 140 / 100 |
+| 智力 | 策略伤害 | 200 / 180 / 160 / 140 / 100 |
+| 统帅（防御） | 减免伤害 | 90 / 80 / 70 / 60 / 50 |
+| 速度 | 决定行动顺序 | 100 / 90 / 80 / 70 / 60 |
+| 生命 | 固定 | 10000 |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 战斗逻辑
+
+### 流程
+
+战前准备（组队配点）→ 战斗开始（指挥 / 被动触发）→ 回合循环（按速度行动）→ 结算（胜负 / 平局）。
+
+- 每队最多 3 人，8 回合内决出胜负；8 回合结束双方仍有存活武将则判平局。
+- 行动顺序由**速度**决定（高者先动），速度相同时进攻方优先。
+- 一方全部阵亡立即结束，不等待第 8 回合。
+
+### 伤害公式
+
+**物理（武力）伤害：**
+
+```
+伤害 = 攻击倍率 × (攻击者武力 − 被攻击者统帅) × (1 + 增伤% − 减伤%) × (1 + 受伤害提升% − 受伤害降低%)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**策略（智力）伤害：**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+伤害 = 攻击倍率 × (攻击者智力 − 0.6×被攻击者统帅 − 0.4×被攻击者智力)
+       × (1 + 增伤% − 减伤%) × (1 + 受伤害提升% − 受伤害降低%)
+```
+
+**破防规则**：若「攻击者武力 − 被攻击者统帅 ≤ 0」（或智力对应项 ≤ 0），伤害固定为 1，且先于增伤判定。
+
+### 特殊伤害与效果
+
+- **持续伤害（DoT）**：只与施加者攻击力和倍率有关，不可暴击。
+- **暴击**：初始暴击伤害 = 原伤害 × 150%；会心效果下必定暴击。
+- **附加伤害**：固定数值，不参与公式计算。
+- **吸血**：倒戈（武力伤害回血）、攻心（智力伤害回血），按造成伤害比例回复。
+
+### 控制与增益
+
+| 控制 | 效果 | 增益 | 效果 | 减益 | 效果 |
+|------|------|------|------|------|------|
+| 技穷 | 无法释放主动战法 | 破甲 | 无视统帅 | 洪水 | 统帅 −10（上限 3 层） |
+| 缴械 | 无法普攻 | 破阵 | 无视减伤 | 畏惧 | 受伤害 +10% |
+| 震慑 | 无法行动 | 连击 | 每回合普攻两次 | | |
+| 规避 | 闪避伤害 | 穿透 | 无视护盾 | | |
+
+---
+
+## 技术栈
+
+- **前端**：React 19 · TypeScript 6 · Vite 8 · Tailwind CSS 4 · Zustand 5 · React Router 7
+- **后端**：Express 5 · Socket.IO · MySQL 8 · JWT 认证 · bcryptjs
+- **测试**：Vitest + React Testing Library
+- **部署**：Docker Compose（Node 22 + MySQL 8.4）
+
+## 目录结构
+
+项目按职责拆分为三层：
+
+```text
+client/      # 前端 UI（components / store / hooks / context / lib）
+server/      # 后端 API 与实时通信（routes / middleware / socket / database）
+game/        # 纯游戏逻辑（battle / generals / skills / types / utils）
+tests/       # 单元测试
+design/      # 游戏设计文档（GDD）
+docs/        # 技术文档与引擎参考
+public/      # 静态资源（武将立绘等）
+```
+
+- `game/battle/` — 战斗引擎（回合制、伤害计算、战法结算、状态效果）
+- `game/generals/` — 武将数据与属性等级
+- `game/skills/` — 战法定义
+- 游戏逻辑与前后端解耦，可独立单元测试。
+
+---
+
+## 快速开始
+
+```bash
+# 安装依赖
+npm install
+
+# 启动前端开发服务器（默认 5173）
+npm run dev
+
+# 启动后端（默认 3001，需配置环境变量）
+npm run server:dev
+```
+
+### 常用脚本
+
+| 命令 | 说明 |
+|------|------|
+| `npm run dev` | 启动 Vite 前端开发服务器 |
+| `npm run build` | 类型检查（`tsc -b`）+ 打包前端 |
+| `npm run preview` | 预览打包产物 |
+| `npm test` | 运行 Vitest 单元测试 |
+| `npm run lint` | ESLint 代码检查 |
+| `npm run server:dev` | 热重载运行后端（tsx watch） |
+| `npm run server:start` | 运行后端 |
+
+### 环境变量
+
+后端与部署依赖以下环境变量（写入 `.env`，参考 `.env.example`）：
+
+| 变量 | 说明 |
+|------|------|
+| `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | MySQL 连接信息 |
+| `API_PORT` | 后端端口（默认 3001） |
+| `JWT_SECRET` | JWT 签名密钥 |
+| `MYSQL_ROOT_PASSWORD` | Docker MySQL root 密码 |
+| `SERVER_PASS` | 部署脚本 SSH 密码 |
+
+---
+
+## 部署
+
+```bash
+# Docker Compose 一键部署（MySQL + 应用）
+docker compose up -d --build
+```
+
+或使用 `deploy.py` 部署到远程 Linux 服务器（需配置 `SERVER_PASS` 环境变量）。
+
+---
+
+## 设计文档
+
+战斗系统的完整设计（公式推导、边界情况、调参项、验收标准）见 [design/gdd/combat-system.md](design/gdd/combat-system.md)。
