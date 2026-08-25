@@ -65,10 +65,15 @@ def upload_files(ssh):
             print(f"  Uploading {f} -> {remote}")
             sftp.put(local, remote)
 
-    # 上传整个 src/ 目录
-    local_src = os.path.join(os.path.dirname(__file__), "src")
-    remote_src = f"{REMOTE_DIR}/src"
-    print(f"  Uploading src/ ...")
+    # 上传 client/ 目录
+    local_client = os.path.join(os.path.dirname(__file__), "client")
+    remote_client = f"{REMOTE_DIR}/client"
+    print(f"  Uploading client/ ...")
+
+    # 上传 game/ 目录
+    local_game = os.path.join(os.path.dirname(__file__), "game")
+    remote_game = f"{REMOTE_DIR}/game"
+    print(f"  Uploading game/ ...")
 
     def upload_dir(local_dir, remote_dir):
         try:
@@ -86,7 +91,8 @@ def upload_files(ssh):
             elif os.path.isdir(local_path):
                 upload_dir(local_path, remote_path)
 
-    upload_dir(local_src, remote_src)
+    upload_dir(local_client, remote_client)
+    upload_dir(local_game, remote_game)
 
     # 上传 server/ 目录
     local_server = os.path.join(os.path.dirname(__file__), "server")
@@ -99,12 +105,6 @@ def upload_files(ssh):
     remote_public = f"{REMOTE_DIR}/public"
     print(f"  Uploading public/ ...")
     upload_dir(local_public, remote_public)
-
-    # 上传 database/ 目录
-    local_db = os.path.join(os.path.dirname(__file__), "database")
-    remote_db = f"{REMOTE_DIR}/database"
-    print(f"  Uploading database/ ...")
-    upload_dir(local_db, remote_db)
 
     sftp.close()
 

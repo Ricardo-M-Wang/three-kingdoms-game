@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDamage, clampHealing } from '../../../src/engine/damageCalculator';
-import { computeEffectiveAttributes, refreshEffectiveAttributes } from '../../../src/engine/attributeCalculator';
-import { computeTurnOrder } from '../../../src/engine/turnOrder';
-import { canAct, canUseActiveSkill, canNormalAttack } from '../../../src/engine/statusResolver';
-import { setSeed, rollChance } from '../../../src/utils/random';
-import { createBattleState, runFullBattle } from '../../../src/engine/battleEngine';
-import { getSkillById } from '../../../src/data';
-import type { BattleGeneral, BattleState, Team } from '../../../src/types';
-import type { DamageContext } from '../../../src/types/damage';
+import { calculateDamage, clampHealing } from '../../../game/battle/damageCalculator';
+import { computeEffectiveAttributes, refreshEffectiveAttributes } from '../../../game/battle/attributeCalculator';
+import { computeTurnOrder } from '../../../game/battle/turnOrder';
+import { canAct, canUseActiveSkill, canNormalAttack } from '../../../game/battle/statusResolver';
+import { setSeed, rollChance } from '../../../game/utils/random';
+import { createBattleState, runFullBattle } from '../../../game/battle/battleEngine';
+import { getSkillById } from '../../../game/skills';
+import type { BattleGeneral, BattleState, Team } from '../../../game/types';
+import type { DamageContext } from '../../../game/types/damage';
 
 // ---- Helpers ----
 
