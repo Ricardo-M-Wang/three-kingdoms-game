@@ -4,7 +4,7 @@ services:
     container_name: san_kingdoms_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: Wangna0212!
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: san_kingdoms
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_unicode_ci
@@ -18,7 +18,7 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pWangna0212!"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,10 +32,10 @@ services:
     environment:
       DB_HOST: mysql
       DB_USER: root
-      DB_PASSWORD: Wangna0212!
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: san_kingdoms
       API_PORT: 3001
-      JWT_SECRET: three-kingdoms-prod-secret-change-me
+      JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: production
     depends_on:
       mysql:

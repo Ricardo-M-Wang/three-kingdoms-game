@@ -8,7 +8,9 @@ import time
 
 SERVER_IP = "101.35.89.132"
 SERVER_USER = "root"
-SERVER_PASS = "!tbTr9~2c+eF"
+SERVER_PASS = os.environ.get("SERVER_PASS")
+if not SERVER_PASS:
+    raise SystemExit("请设置环境变量 SERVER_PASS（服务器 root 密码）")
 REMOTE_DIR = "/opt/san-kingdoms"
 
 # 需要上传的文件列表
